@@ -28,6 +28,11 @@
 			path = Lemmings;
 			sourceTree = "<group>";
 		};
+		AEDD4A772F4BDDDB00365163 /* Assets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Assets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +51,7 @@
 			children = (
 				4BE9A0FB2F46FAE50010D676 /* Lemmings */,
 				4BE9A0FA2F46FAE50010D676 /* Products */,
+				AEDD4A772F4BDDDB00365163 /* Assets */,
 			);
 			sourceTree = "<group>";
 		};
@@ -74,6 +80,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				4BE9A0FB2F46FAE50010D676 /* Lemmings */,
+				AEDD4A772F4BDDDB00365163 /* Assets */,
 			);
 			name = Lemmings;
 			packageProductDependencies = (
