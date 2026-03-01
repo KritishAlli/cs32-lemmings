@@ -13,7 +13,7 @@ GameWorld* createStudentWorld(string assetPath)
 // Do not change or remove the createStudentWorld implementation above.
 
 StudentWorld::StudentWorld(string assetPath)
-: GameWorld(assetPath), m_level(Level(assetPath))
+: GameWorld(assetPath), m_level(Level(assetPath)), m_ticksRemaining(2000)
 {
 }
 StudentWorld::~StudentWorld(){
@@ -40,7 +40,33 @@ int StudentWorld::init()
             else if (item == Level::ice_monster) {
                 m_actorList.push_back(new IceMonster(x, y, this));
             }
-            
+            else if (item == Level::lemming_factory) {
+                m_actorList.push_back(new LemmingFactory(x,y,this));
+            }
+            else if (item == Level::lemming_exit) {
+                m_actorList.push_back(new Exit(x,y,this));
+            }
+            else if (item == Level::trampoline) {
+                m_actorList.push_back(new Trampoline(x,y,this));
+            }
+            else if (item == Level::bonfire) {
+                m_actorList.push_back(new Bonfire(x,y,this));
+            }
+            else if (item == Level::spring) {
+                m_actorList.push_back(new Spring(x,y,this));
+            }
+            else if (item == Level::net) {
+                m_actorList.push_back(new Net(x,y,this));
+            }
+            else if (item == Level::left_one_way_door) {
+                m_actorList.push_back(new OneWayDoor(x,y,this));
+            }
+            else if (item == Level::right_one_way_door) {
+                m_actorList.push_back(new OneWayDoor(x,y,this));
+            }
+            else if (item == Level::pheromone) {
+                m_actorList.push_back(new Pheromone(x,y,this));
+            }
         }
     }
     

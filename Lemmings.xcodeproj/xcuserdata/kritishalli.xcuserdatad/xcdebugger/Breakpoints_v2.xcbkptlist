@@ -110,10 +110,10 @@
             filePath = "Lemmings/StudentWorld.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "47"
-            endingLineNumber = "47"
-            landmarkName = "StudentWorld::init()"
-            landmarkType = "7">
+            startingLineNumber = "73"
+            endingLineNumber = "73"
+            landmarkName = "unknown"
+            landmarkType = "0">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -126,8 +126,8 @@
             filePath = "Lemmings/Actor.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "20"
-            endingLineNumber = "20"
+            startingLineNumber = "34"
+            endingLineNumber = "34"
             landmarkName = "IceMonster::IceMonster(xInit, yInit, world)"
             landmarkType = "7">
          </BreakpointContent>
