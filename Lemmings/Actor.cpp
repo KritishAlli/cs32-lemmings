@@ -2,20 +2,9 @@
 #include "StudentWorld.h"
 
 Actor::Actor(int image, int xInit, int yInit, StudentWorld* world)
-    : m_image(image), m_posx(xInit), m_posy(yInit), m_world(world) {}
+    : GraphObject(image, Coord(xInit, yInit), right), m_world(world) {}
 Actor::~Actor() {}
-int Actor::getXPos(){
-    return m_posx;
-}
 
-int Actor::getYPos() {
-    return m_posy;
-}
-
-void Actor::setXY(int xNew, int yNew){
-    m_posx = xNew;
-    m_posy = yNew;
-}
 StudentWorld* Actor::getWorld(){
     return m_world;
 }
@@ -28,32 +17,24 @@ void FloorBrick::doSomething() {return;}
 
 
 IceMonster::IceMonster(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_ICE_MONSTER, xInit, yInit, world), facingLeft(true) {}
+    : Actor(IID_ICE_MONSTER, xInit, yInit, world) {}
 
 void IceMonster::doSomething() {
-    int curX = getXPos();
-    int curY = getYPos();
-    if (facingLeft) {
-        if (getWorld()->actorAt(curX - 1, curY) == "floor") {
-            facingLeft = !facingLeft;
-        }
-        else if (getWorld()->actorAt(curX - 1, curY+1) != "floor") {
-            facingLeft = !facingLeft;
+    
+    int direction = getDirection();
+    Coord oneForward = getTargetCoord(direction);
+    Coord belowForward = getTargetCoord(oneForward, GraphObject::down);
+    
+    if (getWorld()->isFloorAt(oneForward) || !getWorld()->isFloorAt(belowForward)) {
+        if (direction == left) {
+            setDirection(right);
         }
         else {
-            setXY(curX - 1, curY);
+            setDirection(left);
         }
     }
     else {
-        if (getWorld()->actorAt(curX + 1, curY) == "floor") {
-            facingLeft = !facingLeft;
-        }
-        else if (getWorld()->actorAt(curX + 1, curY+1) != "floor") {
-            facingLeft = !facingLeft;
-        }
-        else {
-            setXY(curX + 1, curY);
-        }
+        moveTo(oneForward);
     }
 }
 

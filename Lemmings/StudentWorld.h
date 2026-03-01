@@ -17,7 +17,9 @@ public:
   virtual int init();
   virtual int move();
   virtual void cleanUp();
-    std::string actorAt(int x, int y);
+    Level::MazeEntry actorAt(Coord p);
+    bool isFloorAt(Coord p);
+
     
 
 private:

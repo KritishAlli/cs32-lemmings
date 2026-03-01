@@ -22,7 +22,8 @@ StudentWorld::~StudentWorld(){
 
 int StudentWorld::init()
 {
-    Level::LoadResult result = m_level.loadLevel(assetPath());
+    std::string curLevel = "level00.txt";
+    Level::LoadResult result = m_level.loadLevel(curLevel);
     
     if (result == Level::load_fail_file_not_found ||
         result == Level::load_fail_bad_format)
@@ -65,12 +66,12 @@ void StudentWorld::cleanUp()
     }
     m_actorList.clear();
 }
-string StudentWorld::actorAt(int x, int y){
-    Coord p(0, 5);
+Level::MazeEntry StudentWorld::actorAt(Coord p){
     Level::MazeEntry item = m_level.getContentsOf(p);
-    if (item == Level::floor)
-        return "floor";
-    if (item == Level::ice_monster)
-        return "ice-monster";
-    return "invalid";
+    return item;
+}
+
+bool StudentWorld::isFloorAt(Coord p){
+    Level::MazeEntry item = m_level.getContentsOf(p);
+    return item == Level::floor;
 }
