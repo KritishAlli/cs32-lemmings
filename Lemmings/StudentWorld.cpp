@@ -13,7 +13,7 @@ GameWorld* createStudentWorld(string assetPath)
 // Do not change or remove the createStudentWorld implementation above.
 
 StudentWorld::StudentWorld(string assetPath)
-: GameWorld(assetPath), m_level(Level(assetPath)), m_ticksRemaining(2000)
+: GameWorld(assetPath), m_level(Level(assetPath)), m_score(0), m_lemmingsSpawned(0), m_lemmingsSaved(0), m_lemmingsDead(0), m_ticksRemaining(2000)
 {
 }
 StudentWorld::~StudentWorld(){
@@ -22,7 +22,7 @@ StudentWorld::~StudentWorld(){
 
 int StudentWorld::init()
 {
-    std::string curLevel = "level00.txt";
+    std::string curLevel = "level01.txt";
     Level::LoadResult result = m_level.loadLevel(curLevel);
     
     if (result == Level::load_fail_file_not_found ||
@@ -69,18 +69,36 @@ int StudentWorld::init()
             }
         }
     }
-    
+    m_toolList = m_level.getTools();
     return GWSTATUS_CONTINUE_GAME;
 }
 
 int StudentWorld::move()
 {
+    m_ticksRemaining --;
+    
     for (int i = 0; i < m_actorList.size(); i++) {
         m_actorList.at(i) -> doSomething();
     }
     // This code is here merely to allow the game to build, run, and terminate after you type q
 
-    setGameStatText("Game will end when you type q");
+    setGameStatText("Score: " + printNumber(getScore(), 5)
+                    + " Level: " + printNumber(getLevel(), 2)
+                    + " Lives: " + printNumber(getLives(), 2)
+                    + " Saved: " + printNumber(m_lemmingsSaved, 2)
+                    + " Tools: " + printTools()
+                    + " Time left: " + printNumber(m_ticksRemaining, 4));
+
+    if (m_lemmingsDead > 5 || (m_ticksRemaining == 0 && m_lemmingsSaved < 5)) {
+        decLives();
+        return GWSTATUS_PLAYER_DIED;
+    }
+    if (m_ticksRemaining == 0 && m_lemmingsSaved >= 5) {
+        playSound(SOUND_FINISHED_LEVEL);
+        return GWSTATUS_FINISHED_LEVEL;
+    }
+    //THERES MORE IF STATEMENTS TO DO HERE!!!!!
+    
     
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -100,4 +118,27 @@ Level::MazeEntry StudentWorld::actorAt(Coord p){
 bool StudentWorld::isFloorAt(Coord p){
     Level::MazeEntry item = m_level.getContentsOf(p);
     return item == Level::floor;
+}
+std::string StudentWorld::printNumber(int number, int places){
+    string out = "";
+    string strNumber = to_string(number);
+    int count = 0;
+    for (int i = 0; i < places; i++) {
+        if (places - i > strNumber.size()) {
+            out += '0';
+        }
+        else {
+            out += strNumber[count];
+            count ++;
+        }
+    }
+
+    
+    return out;
+}
+std::string StudentWorld::printTools(){
+    if (m_toolList.size() == 0) {
+        return "None";
+    }
+    return m_toolList;
 }

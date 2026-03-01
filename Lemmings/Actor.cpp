@@ -62,8 +62,14 @@ Lemming::Lemming(int xInit, int yInit, StudentWorld* world)
 void Lemming::doSomething() {return;}
 
 Player::Player(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_PLAYER, xInit, yInit, world) {}
-void Player::doSomething() {return;}
+    : Actor(IID_PLAYER, VIEW_WIDTH/2, VIEW_HEIGHT/2, world) {}
+
+void Player::doSomething() {
+    
+    
+    
+    return;
+}
 
 
 Bonfire::Bonfire(int xInit, int yInit, StudentWorld* world)

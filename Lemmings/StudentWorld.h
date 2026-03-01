@@ -24,12 +24,17 @@ public:
 
 private:
     std::vector<Actor*> m_actorList;
-    std::vector<Tool*> m_toolList;
+    std::string m_toolList;
     Level m_level;
+    int m_score;
+    int m_levelNumber;
     int m_ticksRemaining;
     int m_lemmingsSpawned;
     int m_lemmingsDead;
     int m_lemmingsSaved;
+    std::string printNumber(int number, int places);
+    std::string printTools();
+
 
     
 };
