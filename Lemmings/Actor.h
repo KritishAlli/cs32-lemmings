@@ -10,7 +10,7 @@ class StudentWorld;
 
 class Actor : public GraphObject {
 public:
-    Actor(int image, int xInit, int yInit, StudentWorld* world, bool solidity = false, bool launchability = false);
+    Actor(int image, int xInit, int yInit, StudentWorld* world, bool solidity = false, bool launchability = false, bool isAlive = true);
     virtual ~Actor();
     virtual void doSomething() = 0;
 
@@ -19,10 +19,13 @@ public:
     void setSolidity(bool val);
     bool isLaunchable() const;
     void setLaunchability(bool val);
+    bool isAlive() const;
 private:
     bool m_isSolid;
     bool m_isLaunchable;
+    bool m_isAlive;
     StudentWorld* m_world;
+    
 
 };
 
@@ -50,6 +53,13 @@ class Lemming : public Actor {
 public:
     Lemming(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+private:
+    int m_ticksSinceMove;
+
+    
+private:
+    // 0 - walking, 1 - falling, 2 - bouncing, 3 - crawling
+    int m_movementState;
 };
 class Player : public Actor {
 public:

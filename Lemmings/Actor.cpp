@@ -1,8 +1,8 @@
 #include "Actor.h"
 #include "StudentWorld.h"
 
-Actor::Actor(int image, int xInit, int yInit, StudentWorld* world, bool solidity, bool launchability)
-    : GraphObject(image, Coord(xInit, yInit)), m_world(world), m_isSolid(solidity), m_isLaunchable(launchability) {}
+Actor::Actor(int image, int xInit, int yInit, StudentWorld* world, bool solidity, bool launchability, bool isAlive)
+    : GraphObject(image, Coord(xInit, yInit)), m_world(world), m_isSolid(solidity), m_isLaunchable(launchability), m_isAlive(isAlive) {}
 Actor::~Actor() {}
 
 StudentWorld* Actor::getWorld(){
@@ -20,6 +20,7 @@ bool Actor::isLaunchable() const {
 void Actor::setLaunchability(bool val) {
     m_isLaunchable = val;
 }
+bool Actor::isAlive() const {return m_isAlive;}
 
 
 
@@ -63,14 +64,61 @@ void LemmingFactory::doSomething() {
             getWorld()->addActor(new Lemming(c.x, c.y, getWorld()));
             
         }
+        m_ticksSinceLemming -= 100;
     }
     return;
 }
 
 
 Lemming::Lemming(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_LEMMING, xInit, yInit, world) {}
-void Lemming::doSomething() {return;}
+    : Actor(IID_LEMMING, xInit, yInit, world), m_movementState(0), m_ticksSinceMove(0){}
+void Lemming::doSomething() {
+    m_ticksSinceMove ++;
+    if (!isAlive()) {
+        return;
+    }
+    if (m_movementState == 0) {
+        if (m_ticksSinceMove == 4) {
+            m_ticksSinceMove = 0;
+            int direction = getDirection();
+            Coord oneForward = getTargetCoord(direction);
+            if (getWorld()->isFloorAt(oneForward)) {
+                if (direction == left) {
+                    setDirection(right);
+                }
+                else {
+                    setDirection(left);
+                }
+            }
+            else {
+                moveTo(oneForward);
+            }
+        }
+    }
+    else {
+        if (m_ticksSinceMove == 2) {
+            m_ticksSinceMove = 0;
+            int direction = getDirection();
+            Coord oneForward = getTargetCoord(direction);
+            if (getWorld()->isFloorAt(oneForward)) {
+                if (direction == left) {
+                    setDirection(right);
+                }
+                else {
+                    setDirection(left);
+                }
+            }
+            else {
+                moveTo(oneForward);
+            }
+        }
+    }
+    
+    
+    return;
+    
+}
+
 
 Player::Player(StudentWorld* world)
     : Actor(IID_PLAYER, VIEW_WIDTH/2, VIEW_HEIGHT/2, world) {}
