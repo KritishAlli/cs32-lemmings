@@ -53,18 +53,67 @@ void IceMonster::doSomething() {
 }
 
 LemmingFactory::LemmingFactory(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_LEMMING_FACTORY, xInit, yInit, world) {}
-void LemmingFactory::doSomething() {return;}
+    : Actor(IID_LEMMING_FACTORY, xInit, yInit, world), m_ticksSinceLemming(0) {}
+
+void LemmingFactory::doSomething() {
+    m_ticksSinceLemming ++;
+    if (m_ticksSinceLemming >= 100) {
+        if (getWorld()->getLemmingsSpawned() < 10) {
+            Coord c = getCoord();
+            getWorld()->addActor(new Lemming(c.x, c.y, getWorld()));
+            
+        }
+    }
+    return;
+}
 
 
 Lemming::Lemming(int xInit, int yInit, StudentWorld* world)
     : Actor(IID_LEMMING, xInit, yInit, world) {}
 void Lemming::doSomething() {return;}
 
-Player::Player(int xInit, int yInit, StudentWorld* world)
+Player::Player(StudentWorld* world)
     : Actor(IID_PLAYER, VIEW_WIDTH/2, VIEW_HEIGHT/2, world) {}
 
 void Player::doSomething() {
+    
+    int keyPressed = 0;
+    
+    if (getWorld()->getKey(keyPressed)) {
+        
+        switch (keyPressed) {
+            case KEY_PRESS_LEFT: {
+                Coord oneForward = getTargetCoord(left);
+                if (oneForward.x >= 1)
+                    moveTo(left);
+                break;
+            }
+            case KEY_PRESS_RIGHT: {
+                Coord oneForward = getTargetCoord(right);
+                if (oneForward.x <= VIEW_WIDTH-2)
+                    moveTo(right);
+                break;
+            }
+            case KEY_PRESS_UP: {
+                Coord oneForward = getTargetCoord(up);
+                if (oneForward.y >= 1)
+                    moveTo(up);
+                break;
+            }
+            case KEY_PRESS_DOWN: {
+                Coord oneForward = getTargetCoord(down);
+                if (oneForward.y <= VIEW_HEIGHT-2)
+                    moveTo(down);
+                break;
+            }
+
+            default:
+                std::cout << keyPressed;
+                break;
+        }
+        
+        
+    }
     
     
     

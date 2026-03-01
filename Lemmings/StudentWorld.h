@@ -19,6 +19,8 @@ public:
   virtual void cleanUp();
     Level::MazeEntry actorAt(Coord p);
     bool isFloorAt(Coord p);
+    void addActor(Actor* a);
+    int getLemmingsSpawned() {return m_lemmingsSpawned;}
 
     
 

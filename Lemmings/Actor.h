@@ -42,6 +42,9 @@ class LemmingFactory : public Actor {
 public:
     LemmingFactory(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+private:
+    int m_ticksSinceLemming;
+    int m_lemmingsSpawned;
 };
 class Lemming : public Actor {
 public:
@@ -50,7 +53,7 @@ public:
 };
 class Player : public Actor {
 public:
-    Player(int xInit, int yInit, StudentWorld* world);
+    Player(StudentWorld* world);
     void doSomething() override;
 };
 class Bonfire : public Actor {

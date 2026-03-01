@@ -22,14 +22,14 @@ StudentWorld::~StudentWorld(){
 
 int StudentWorld::init()
 {
-    std::string curLevel = "level01.txt";
+    std::string curLevel = "level00.txt";
     Level::LoadResult result = m_level.loadLevel(curLevel);
     
     if (result == Level::load_fail_file_not_found ||
         result == Level::load_fail_bad_format)
         return -1;
     
-    
+    m_actorList.push_back(new Player(this));
     for ( int x = 0; x < VIEW_WIDTH; x++) {
         for (int y = 0; y < VIEW_HEIGHT; y++) {
             Coord cur_coord(x, y);
@@ -119,6 +119,11 @@ bool StudentWorld::isFloorAt(Coord p){
     Level::MazeEntry item = m_level.getContentsOf(p);
     return item == Level::floor;
 }
+
+void StudentWorld::addActor(Actor* a) {
+    m_actorList.push_back(a);
+}
+
 std::string StudentWorld::printNumber(int number, int places){
     string out = "";
     string strNumber = to_string(number);
