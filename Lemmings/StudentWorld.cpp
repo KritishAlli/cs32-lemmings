@@ -13,7 +13,7 @@ GameWorld* createStudentWorld(string assetPath)
 // Do not change or remove the createStudentWorld implementation above.
 
 StudentWorld::StudentWorld(string assetPath)
-: GameWorld(assetPath), m_level(Level(assetPath)), m_score(0), m_lemmingsSpawned(0), m_lemmingsSaved(0), m_lemmingsDead(0), m_ticksRemaining(2000)
+: GameWorld(assetPath), m_level(Level(assetPath)), m_lemmingsSpawned(0), m_lemmingsSaved(0), m_lemmingsDead(0), m_ticksRemaining(2000)
 {
 }
 StudentWorld::~StudentWorld(){
@@ -22,7 +22,7 @@ StudentWorld::~StudentWorld(){
 
 int StudentWorld::init()
 {
-    std::string curLevel = "level00.txt";
+    std::string curLevel = "level02.txt";
     Level::LoadResult result = m_level.loadLevel(curLevel);
     
     if (result == Level::load_fail_file_not_found ||
@@ -98,7 +98,17 @@ int StudentWorld::move()
         return GWSTATUS_FINISHED_LEVEL;
     }
     //THERES MORE IF STATEMENTS TO DO HERE!!!!!
-    
+    for (int i = 0; i < m_actorList.size(); i++) {
+        Actor* cur = m_actorList.at(i);
+        if (cur->isSaveable() && cur->isSaved()) {
+            m_actorList.erase(m_actorList.begin() + i);
+            delete cur;
+        }
+        else if (cur->isKillable() && !cur->isAlive()) {
+            m_actorList.erase(m_actorList.begin() + i);
+            delete cur;
+        }
+    }
     
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -109,6 +119,9 @@ void StudentWorld::cleanUp()
         delete m_actorList.at(i);
     }
     m_actorList.clear();
+    m_lemmingsSpawned = 0;
+    m_lemmingsDead = 0;
+    m_lemmingsSaved = 0;
 }
 Level::MazeEntry StudentWorld::actorAt(Coord p){
     Level::MazeEntry item = m_level.getContentsOf(p);
@@ -122,6 +135,54 @@ bool StudentWorld::isFloorAt(Coord p){
 
 void StudentWorld::addActor(Actor* a) {
     m_actorList.push_back(a);
+}
+
+void StudentWorld::saveLemming(Coord c) {
+    for (int i = 0; i < m_actorList.size(); i++) {
+        if(m_actorList.at(i)->getCoord() == c && m_actorList.at(i)->isSaveable()) {
+            m_actorList.at(i)->save();
+            increaseScore(SCORE_SAVED_LEMMING);
+            m_lemmingsSaved ++;
+            return;
+        }
+        
+    }
+}
+bool StudentWorld::killLemming(Coord c) {
+    bool flag = false;
+    for (int i = 0; i < m_actorList.size(); i++) {
+        Actor* cur = m_actorList.at(i);
+        if(cur->getCoord() == c && cur->isKillable()) {
+            cur->kill();
+            m_lemmingsDead ++;
+            flag = true;
+        }
+        
+    }
+    return flag;
+}
+int StudentWorld::getClosestAttractorDirection(Coord c) {
+    int minDist = 999;
+    int direction = Actor::none;
+    
+    for (Actor* a : m_actorList) {
+        if (a->getCoord().y == c.y && a->isLemmingAttractor()) {
+            int curDist = a->getCoord().x - c.x;
+            if (curDist < 0) {
+                if (curDist >= -5 && abs(curDist) < minDist) {
+                    minDist = abs(curDist);
+                    direction = Actor::left;
+                }
+            }
+            else if (curDist > 0) {
+                if (curDist <= 5 && abs(curDist) < minDist) {
+                    minDist = abs(curDist);
+                    direction = Actor::right;
+                }
+            }
+        }
+    }
+    return direction;
 }
 
 std::string StudentWorld::printNumber(int number, int places){
@@ -147,3 +208,4 @@ std::string StudentWorld::printTools(){
     }
     return m_toolList;
 }
+

@@ -21,6 +21,14 @@ public:
     bool isFloorAt(Coord p);
     void addActor(Actor* a);
     int getLemmingsSpawned() {return m_lemmingsSpawned;}
+    void incrementLemmingsSpawned() {m_lemmingsSpawned++;}
+    int getLemmingsDead() const {return m_lemmingsDead;}
+    void setLemmingsDead(int number) {m_lemmingsDead = number;}
+    int getLemmingsSaved() const {return m_lemmingsSaved;}
+    void setLemmingsSaved(int number) {m_lemmingsSaved = number;}
+    void saveLemming(Coord c);
+    bool killLemming(Coord c);
+    int getClosestAttractorDirection(Coord c);
 
     
 
@@ -28,7 +36,6 @@ private:
     std::vector<Actor*> m_actorList;
     std::string m_toolList;
     Level m_level;
-    int m_score;
     int m_levelNumber;
     int m_ticksRemaining;
     int m_lemmingsSpawned;

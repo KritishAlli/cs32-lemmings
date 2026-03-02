@@ -21,6 +21,7 @@ void Actor::setLaunchability(bool val) {
     m_isLaunchable = val;
 }
 bool Actor::isAlive() const {return m_isAlive;}
+void Actor::setAlive(bool value) {m_isAlive = value;}
 
 
 
@@ -32,24 +33,31 @@ void FloorBrick::doSomething() {return;}
 
 
 IceMonster::IceMonster(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_ICE_MONSTER, xInit, yInit, world) {}
+    : Actor(IID_ICE_MONSTER, xInit, yInit, world), m_ticksSinceMove(0) {}
 
 void IceMonster::doSomething() {
     
-    int direction = getDirection();
-    Coord oneForward = getTargetCoord(direction);
-    Coord belowForward = getTargetCoord(oneForward, GraphObject::down);
-    
-    if (getWorld()->isFloorAt(oneForward) || !getWorld()->isFloorAt(belowForward)) {
-        if (direction == left) {
-            setDirection(right);
+    if (getWorld()->killLemming(getCoord())) {
+        return;
+    }
+    m_ticksSinceMove++;
+    if (m_ticksSinceMove == 10) {
+        m_ticksSinceMove = 0;
+        int direction = getDirection();
+        Coord oneForward = getTargetCoord(direction);
+        Coord belowForward = getTargetCoord(oneForward, GraphObject::down);
+        
+        if (getWorld()->isFloorAt(oneForward) || !getWorld()->isFloorAt(belowForward)) {
+            if (direction == left) {
+                setDirection(right);
+            }
+            else {
+                setDirection(left);
+            }
         }
         else {
-            setDirection(left);
+            moveTo(oneForward);
         }
-    }
-    else {
-        moveTo(oneForward);
     }
 }
 
@@ -62,6 +70,7 @@ void LemmingFactory::doSomething() {
         if (getWorld()->getLemmingsSpawned() < 10) {
             Coord c = getCoord();
             getWorld()->addActor(new Lemming(c.x, c.y, getWorld()));
+            getWorld()->incrementLemmingsSpawned();
             
         }
         m_ticksSinceLemming -= 100;
@@ -71,18 +80,27 @@ void LemmingFactory::doSomething() {
 
 
 Lemming::Lemming(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_LEMMING, xInit, yInit, world), m_movementState(0), m_ticksSinceMove(0){}
+    : Actor(IID_LEMMING, xInit, yInit, world), m_movementState(0), m_ticksSinceMove(0), m_distanceFalling(0){}
 void Lemming::doSomething() {
     m_ticksSinceMove ++;
     if (!isAlive()) {
         return;
     }
+    int direction = getDirection();
+    int closestPheromoneDirection = getWorld()->getClosestAttractorDirection(getCoord());
+    if (closestPheromoneDirection != none) {
+        setDirection(closestPheromoneDirection);
+        direction = closestPheromoneDirection;
+    }
     if (m_movementState == 0) {
         if (m_ticksSinceMove == 4) {
             m_ticksSinceMove = 0;
-            int direction = getDirection();
             Coord oneForward = getTargetCoord(direction);
-            if (getWorld()->isFloorAt(oneForward)) {
+            Coord below = getTargetCoord(down);
+            if (!getWorld()->isFloorAt(below)) {
+                m_movementState = 1;
+            }
+            else if (getWorld()->isFloorAt(oneForward)) {
                 if (direction == left) {
                     setDirection(right);
                 }
@@ -90,26 +108,30 @@ void Lemming::doSomething() {
                     setDirection(left);
                 }
             }
+            
             else {
                 moveTo(oneForward);
             }
         }
     }
-    else {
+    else if (m_movementState == 1){
         if (m_ticksSinceMove == 2) {
             m_ticksSinceMove = 0;
-            int direction = getDirection();
-            Coord oneForward = getTargetCoord(direction);
-            if (getWorld()->isFloorAt(oneForward)) {
-                if (direction == left) {
-                    setDirection(right);
-                }
-                else {
-                    setDirection(left);
-                }
+            Coord below = getTargetCoord(down);
+
+            if (!getWorld()->isFloorAt(below)) {
+                moveTo(below);
+                m_distanceFalling++;
             }
             else {
-                moveTo(oneForward);
+                if (m_distanceFalling > 5) {
+                    getWorld()->playSound(SOUND_LEMMING_DIE);
+                    getWorld()->setLemmingsDead(getWorld()->getLemmingsDead() + 1);
+                    setAlive(false);
+                    return;
+                }
+                m_distanceFalling = 0;
+                m_movementState = 0;
             }
         }
     }
@@ -119,6 +141,14 @@ void Lemming::doSomething() {
     
 }
 
+void Lemming::save() {
+    m_saved = true;
+    getWorld()->playSound(SOUND_LEMMING_SAVED);
+}
+void Lemming::kill() {
+    setAlive(false);
+    getWorld()->playSound(SOUND_LEMMING_DIE);
+}
 
 Player::Player(StudentWorld* world)
     : Actor(IID_PLAYER, VIEW_WIDTH/2, VIEW_HEIGHT/2, world) {}
@@ -171,12 +201,16 @@ void Player::doSomething() {
 
 Bonfire::Bonfire(int xInit, int yInit, StudentWorld* world)
     : Actor(IID_BONFIRE, xInit, yInit, world) {}
-void Bonfire::doSomething() {return;}
+void Bonfire::doSomething() {
+    getWorld()->killLemming(getCoord());
+}
 
 
 Exit::Exit(int xInit, int yInit, StudentWorld* world)
     : Actor(IID_EXIT, xInit, yInit, world) {}
-void Exit::doSomething() {return;}
+void Exit::doSomething() {
+    getWorld()->saveLemming(getCoord());
+}
 
 
 

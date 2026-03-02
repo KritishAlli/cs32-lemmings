@@ -20,6 +20,14 @@ public:
     bool isLaunchable() const;
     void setLaunchability(bool val);
     bool isAlive() const;
+    void setAlive(bool value);
+    virtual bool isSaveable() const {return false;}
+    virtual bool isKillable() const {return false;}
+    virtual bool isSaved() const {return false;}
+    virtual void save() {};
+    virtual void kill() {};
+    virtual bool isLemmingAttractor() const {return false;}
+
 private:
     bool m_isSolid;
     bool m_isLaunchable;
@@ -39,6 +47,8 @@ class IceMonster : public Actor {
 public:
     IceMonster(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+private:
+    int m_ticksSinceMove;
 
 };
 class LemmingFactory : public Actor {
@@ -53,8 +63,16 @@ class Lemming : public Actor {
 public:
     Lemming(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+    bool isSaved() const override {return m_saved;}
+    void setSaved(bool value) {m_saved = value;}
+    bool isSaveable() const override {return true;}
+    bool isKillable() const override {return true;}
+    void save() override;
+    void kill() override;
 private:
     int m_ticksSinceMove;
+    int m_distanceFalling;
+    bool m_saved;
 
     
 private:
@@ -109,6 +127,7 @@ class Pheromone : public Tool {
 public:
     Pheromone(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+    bool isLemmingAttractor() const override {return true;}
 };
 
 
