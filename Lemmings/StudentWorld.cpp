@@ -13,7 +13,7 @@ GameWorld* createStudentWorld(string assetPath)
 // Do not change or remove the createStudentWorld implementation above.
 
 StudentWorld::StudentWorld(string assetPath)
-: GameWorld(assetPath), m_level(Level(assetPath)), m_lemmingsSpawned(0), m_lemmingsSaved(0), m_lemmingsDead(0), m_ticksRemaining(2000)
+: GameWorld(assetPath), m_lemmingsSpawned(0), m_lemmingsSaved(0), m_lemmingsDead(0), m_ticksRemaining(2000)
 {
 }
 StudentWorld::~StudentWorld(){
@@ -22,18 +22,25 @@ StudentWorld::~StudentWorld(){
 
 int StudentWorld::init()
 {
-    std::string curLevel = "level02.txt";
-    Level::LoadResult result = m_level.loadLevel(curLevel);
+    // printNumber(getLevel(), 2)
+    std::string curLevel = "level"+printNumber(getLevel(), 2)+".txt";
+    Level lev(assetPath());
+    Level::LoadResult result = lev.loadLevel(curLevel);
+    m_ticksRemaining = 2000;
+    m_lemmingsSpawned = 0;
+    m_lemmingsDead = 0;
+    m_lemmingsSaved = 0;
     
-    if (result == Level::load_fail_file_not_found ||
-        result == Level::load_fail_bad_format)
-        return -1;
+    if (result == Level::load_fail_file_not_found)
+        return GWSTATUS_PLAYER_WON;
+    if (result == Level::load_fail_bad_format)
+        return GWSTATUS_LEVEL_ERROR;
     
     m_actorList.push_back(new Player(this));
     for ( int x = 0; x < VIEW_WIDTH; x++) {
         for (int y = 0; y < VIEW_HEIGHT; y++) {
             Coord cur_coord(x, y);
-            Level::MazeEntry item = m_level.getContentsOf(cur_coord);
+            Level::MazeEntry item = lev.getContentsOf(cur_coord);
             if (item == Level::floor) {
                 m_actorList.push_back(new FloorBrick(x, y, this));
             }
@@ -59,17 +66,17 @@ int StudentWorld::init()
                 m_actorList.push_back(new Net(x,y,this));
             }
             else if (item == Level::left_one_way_door) {
-                m_actorList.push_back(new OneWayDoor(x,y,this));
+                m_actorList.push_back(new OneWayDoor(x,y,this, Actor::left));
             }
             else if (item == Level::right_one_way_door) {
-                m_actorList.push_back(new OneWayDoor(x,y,this));
+                m_actorList.push_back(new OneWayDoor(x,y,this, Actor::right));
             }
             else if (item == Level::pheromone) {
                 m_actorList.push_back(new Pheromone(x,y,this));
             }
         }
     }
-    m_toolList = m_level.getTools();
+    m_toolList = lev.getTools();
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -89,14 +96,7 @@ int StudentWorld::move()
                     + " Tools: " + printTools()
                     + " Time left: " + printNumber(m_ticksRemaining, 4));
 
-    if (m_lemmingsDead > 5 || (m_ticksRemaining == 0 && m_lemmingsSaved < 5)) {
-        decLives();
-        return GWSTATUS_PLAYER_DIED;
-    }
-    if (m_ticksRemaining == 0 && m_lemmingsSaved >= 5) {
-        playSound(SOUND_FINISHED_LEVEL);
-        return GWSTATUS_FINISHED_LEVEL;
-    }
+    
     //THERES MORE IF STATEMENTS TO DO HERE!!!!!
     for (int i = 0; i < m_actorList.size(); i++) {
         Actor* cur = m_actorList.at(i);
@@ -109,6 +109,19 @@ int StudentWorld::move()
             delete cur;
         }
     }
+    if (m_lemmingsDead > 5 || (m_ticksRemaining == 0 && m_lemmingsSaved < 5)) {
+        decLives();
+        return GWSTATUS_PLAYER_DIED;
+    }
+    if (m_ticksRemaining == 0 && m_lemmingsSaved >= 5) {
+        playSound(SOUND_FINISHED_LEVEL);
+        return GWSTATUS_FINISHED_LEVEL;
+    }
+    if (m_lemmingsSpawned == 10 && m_lemmingsSaved+m_lemmingsDead == m_lemmingsSpawned && m_lemmingsSaved >= 5){
+        increaseScore(m_ticksRemaining);
+        playSound(SOUND_FINISHED_LEVEL);
+        return GWSTATUS_FINISHED_LEVEL;
+    }
     
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -119,19 +132,64 @@ void StudentWorld::cleanUp()
         delete m_actorList.at(i);
     }
     m_actorList.clear();
-    m_lemmingsSpawned = 0;
-    m_lemmingsDead = 0;
-    m_lemmingsSaved = 0;
+    
 }
-Level::MazeEntry StudentWorld::actorAt(Coord p){
-    Level::MazeEntry item = m_level.getContentsOf(p);
-    return item;
+
+bool StudentWorld::attemptToolPlace(Coord c, char tool){
+    // starts from 1 since player cursor should be 0th element
+    for (int i = 1; i < m_actorList.size(); i++) {
+            if (m_actorList.at(i)->getCoord() == c) {
+                return false;
+            }
+        }
+    for (int i = 0; i < m_toolList.length(); i++){
+        if (m_toolList[i] == tool) {
+            m_toolList.erase(i, 1);
+            switch (tool) {
+                case 'T':
+                    m_actorList.push_back(new Trampoline(c.x,c.y,this));
+                    break;
+                case 'N':
+                    m_actorList.push_back(new Net(c.x,c.y,this));
+                    break;
+                case 'P':
+                    m_actorList.push_back(new Pheromone(c.x,c.y,this));
+                    break;
+                case 'S':
+                    m_actorList.push_back(new Spring(c.x,c.y,this));
+                    break;
+                case '<':
+                    m_actorList.push_back(new OneWayDoor(c.x,c.y,this, Actor::left));
+                    break;
+                case '>':
+                    m_actorList.push_back(new OneWayDoor(c.x,c.y,this, Actor::right));
+                    break;
+            }
+            
+            
+            return true;
+        }
+    }
+    return false;
 }
 
 bool StudentWorld::isFloorAt(Coord p){
-    Level::MazeEntry item = m_level.getContentsOf(p);
-    return item == Level::floor;
+    for (Actor* a : m_actorList) {
+            if (a->getCoord() == p && a->isSolid()) {
+                return true;
+            }
+        }
+        return false;
 }
+bool StudentWorld::isClimbableAt(Coord p){
+    for (Actor* a : m_actorList) {
+            if (a->getCoord() == p && a->isClimbable()) {
+                return true;
+            }
+        }
+        return false;
+}
+
 
 void StudentWorld::addActor(Actor* a) {
     m_actorList.push_back(a);
@@ -161,6 +219,34 @@ bool StudentWorld::killLemming(Coord c) {
     }
     return flag;
 }
+bool StudentWorld::swapActorDirection(Coord c, int dir) {
+    bool flag = false;
+    for (int i = 0; i < m_actorList.size(); i++) {
+        Actor* cur = m_actorList.at(i);
+        if(cur->getCoord() == c) {
+            cur->setDirection(dir);
+            flag = true;
+        }
+        
+    }
+    return flag;
+}
+int StudentWorld::bounceActor(Coord c, int fallHeight, Actor* a) {
+    bool flag = false;
+    for (int i = 0; i < m_actorList.size(); i++) {
+        Actor* cur = m_actorList.at(i);
+        if(cur->getCoord() == c && cur->isLauncher()) {
+            int amount = cur->getLaunchAmount(fallHeight);
+            
+            a->setTargetLaunch(amount);
+            a->setMovementState(2);
+            flag = true;
+        }
+        
+    }
+    return flag;
+}
+
 int StudentWorld::getClosestAttractorDirection(Coord c) {
     int minDist = 999;
     int direction = Actor::none;

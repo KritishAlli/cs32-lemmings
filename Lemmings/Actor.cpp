@@ -27,7 +27,7 @@ void Actor::setAlive(bool value) {m_isAlive = value;}
 
 
 FloorBrick::FloorBrick(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_FLOOR, xInit, yInit, world) {}
+    : Actor(IID_FLOOR, xInit, yInit, world, true) {}
 
 void FloorBrick::doSomething() {return;}
 
@@ -80,66 +80,139 @@ void LemmingFactory::doSomething() {
 
 
 Lemming::Lemming(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_LEMMING, xInit, yInit, world), m_movementState(0), m_ticksSinceMove(0), m_distanceFalling(0){}
+    : Actor(IID_LEMMING, xInit, yInit, world, false ,true), m_movementState(0), m_ticksSinceMove(0), m_distanceFalling(0), m_saved(false) , m_upwardSteps(0), m_targetBounceHeight(0){}
 void Lemming::doSomething() {
     m_ticksSinceMove ++;
     if (!isAlive()) {
         return;
     }
-    int direction = getDirection();
+    if ((m_movementState == 0 && m_ticksSinceMove < 4) || (m_movementState != 0 && m_ticksSinceMove < 2)) {
+        return;
+    }
+    m_ticksSinceMove = 0;
     int closestPheromoneDirection = getWorld()->getClosestAttractorDirection(getCoord());
     if (closestPheromoneDirection != none) {
         setDirection(closestPheromoneDirection);
-        direction = closestPheromoneDirection;
     }
+    int didActorBounce = getWorld()->bounceActor(getCoord(), m_distanceFalling, this);
+    
+    if (didActorBounce == 1){
+        m_movementState = 2;
+    }
+    
+    
     if (m_movementState == 0) {
-        if (m_ticksSinceMove == 4) {
-            m_ticksSinceMove = 0;
-            Coord oneForward = getTargetCoord(direction);
-            Coord below = getTargetCoord(down);
-            if (!getWorld()->isFloorAt(below)) {
-                m_movementState = 1;
-            }
-            else if (getWorld()->isFloorAt(oneForward)) {
-                if (direction == left) {
-                    setDirection(right);
-                }
-                else {
-                    setDirection(left);
-                }
-            }
-            
-            else {
-                moveTo(oneForward);
-            }
-        }
+        doWalking();
     }
     else if (m_movementState == 1){
-        if (m_ticksSinceMove == 2) {
-            m_ticksSinceMove = 0;
-            Coord below = getTargetCoord(down);
-
-            if (!getWorld()->isFloorAt(below)) {
-                moveTo(below);
-                m_distanceFalling++;
-            }
-            else {
-                if (m_distanceFalling > 5) {
-                    getWorld()->playSound(SOUND_LEMMING_DIE);
-                    getWorld()->setLemmingsDead(getWorld()->getLemmingsDead() + 1);
-                    setAlive(false);
-                    return;
-                }
-                m_distanceFalling = 0;
-                m_movementState = 0;
-            }
-        }
+        doFalling();
+    }
+    else if (m_movementState == 2) {
+        doBouncing();
+    }
+    else if (m_movementState == 3) {
+        doClimbing();
     }
     
     
     return;
     
 }
+void Lemming::doWalking() {
+    if (getWorld()->isClimbableAt(getCoord())) {
+        m_movementState = 3;
+        return;
+    }
+    
+    Coord oneForward = getTargetCoord(getDirection());
+    Coord belowNext = getTargetCoord(oneForward, down);
+    
+    if (getWorld()->isFloorAt(oneForward)) {
+        if (getDirection() == left) {
+            setDirection(right);
+        }
+        else {
+            setDirection(left);
+        }
+    }
+    else if (getWorld()->isFloorAt(belowNext)) {
+        moveTo(oneForward);
+    }
+    
+    else {
+        m_movementState = 1;
+        m_distanceFalling = 0;
+        moveTo(oneForward);
+    }
+}
+void Lemming::doFalling(){
+    if (getWorld()->isClimbableAt(getCoord())) {
+        m_movementState = 3;
+        return;
+    }
+    Coord below = getTargetCoord(down);
+
+    if (!getWorld()->isFloorAt(below)) {
+        moveTo(below);
+        m_distanceFalling++;
+    }
+    else {
+        if (m_distanceFalling > 5) {
+            getWorld()->playSound(SOUND_LEMMING_DIE);
+            getWorld()->killLemming(getCoord());
+            return;
+        }
+        m_distanceFalling = 0;
+        m_movementState = 0;
+    }
+}
+
+void Lemming::doClimbing() {
+    if (!getWorld()->isClimbableAt(getCoord())) {
+        m_movementState = 0;
+        return;
+    }
+    Coord above = getTargetCoord(up);
+    if (above.y <= 0 || getWorld()->isFloorAt(above)) {
+        return;
+    }
+    moveTo(above);
+    
+}
+void Lemming::doBouncing() {
+    if (getWorld()->isClimbableAt(getCoord())) {
+        m_movementState = 3;
+        return;
+    }
+    if (m_upwardSteps < m_targetBounceHeight) {
+        Coord above = getTargetCoord(up);
+        if (above.y > 0 && !getWorld()->isFloorAt(above)) {
+            moveTo(above);
+            m_upwardSteps++;
+            if (m_upwardSteps < m_targetBounceHeight){
+                return;
+            }
+        }
+    }
+    Coord oneForward = getTargetCoord(getDirection());
+    if (getWorld()->isFloorAt(oneForward)) {
+        if (getDirection() == left) {
+            setDirection(right);
+        }
+        else {
+            setDirection(left);
+        }
+    }
+    else {
+        m_upwardSteps = 0;
+        moveTo(oneForward);
+    }
+    m_movementState = 1;
+    m_distanceFalling = 0;
+    
+    
+}
+
 
 void Lemming::save() {
     m_saved = true;
@@ -186,7 +259,7 @@ void Player::doSomething() {
             }
 
             default:
-                std::cout << keyPressed;
+                getWorld()->attemptToolPlace(getCoord(), toupper(keyPressed));
                 break;
         }
         
@@ -215,27 +288,51 @@ void Exit::doSomething() {
 
 
 
-Tool::Tool(int image, int xInit, int yInit, StudentWorld* world)
-    : Actor(image, xInit, yInit, world) {}
+Tool::Tool(int image, int xInit, int yInit, StudentWorld* world, int direction)
+    : Actor(image, xInit, yInit, world) {
+        setDirection(direction);
+    }
 void Tool::doSomething() {return;}
 
 Trampoline::Trampoline(int xInit, int yInit, StudentWorld* world)
     : Tool(IID_TRAMPOLINE, xInit, yInit, world) {}
-void Trampoline::doSomething() {return;}
+void Trampoline::doSomething() {
+    
+    
+    return;
+    
+}
+int Trampoline::getLaunchAmount(int fallHeight) const {
+    if (fallHeight < 0)
+        return 0;
+    
+    return fallHeight-1;
+}
 
 
 Spring::Spring(int xInit, int yInit, StudentWorld* world)
     : Tool(IID_SPRING, xInit, yInit, world) {}
-void Spring::doSomething() {return;}
+void Spring::doSomething() {
+    
+    return;
+}
+int Spring::getLaunchAmount(int fallHeight) const {
+    return 15;
+}
 
 
 Net::Net(int xInit, int yInit, StudentWorld* world)
     : Tool(IID_NET, xInit, yInit, world) {}
 void Net::doSomething() {return;}
 
-OneWayDoor::OneWayDoor(int xInit, int yInit, StudentWorld* world)
-    : Tool(IID_ONE_WAY_DOOR, xInit, yInit, world) {}
-void OneWayDoor::doSomething() {return;}
+OneWayDoor::OneWayDoor(int xInit, int yInit, StudentWorld* world, int direction)
+    : Tool(IID_ONE_WAY_DOOR, xInit, yInit, world, direction) {}
+void OneWayDoor::doSomething() {
+    if (getWorld()->swapActorDirection(getCoord(), getDirection())) {
+        return;
+    }
+    return;
+}
 
 Pheromone::Pheromone(int xInit, int yInit, StudentWorld* world)
     : Tool(IID_PHEROMONE, xInit, yInit, world) {}

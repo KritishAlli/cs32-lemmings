@@ -27,6 +27,14 @@ public:
     virtual void save() {};
     virtual void kill() {};
     virtual bool isLemmingAttractor() const {return false;}
+    virtual bool isClimbable() const {return false;}
+    virtual void setTargetLaunch(int height) {}
+    virtual void setMovementState(int state) {}
+    virtual int getFallingHeight() const {return 0;}
+    virtual bool isLauncher() const {return false;}
+    virtual int getLaunchAmount(int fallHeight) const {return -1;}
+
+
 
 private:
     bool m_isSolid;
@@ -69,14 +77,23 @@ public:
     bool isKillable() const override {return true;}
     void save() override;
     void kill() override;
+    void doWalking();
+    void doClimbing();
+    void doFalling();
+    void doBouncing();
+    void setTargetBounceHeight(int height) {m_targetBounceHeight = height;}
+    void setMovementState(int state) override {m_movementState = state;}
+    bool isBouncing() {return m_movementState == 2;}
+    void setTargetLaunch(int height) override {m_targetBounceHeight = height;}
+    int getFallingHeight() const override {return m_distanceFalling;}
 private:
     int m_ticksSinceMove;
     int m_distanceFalling;
     bool m_saved;
+    int m_upwardSteps;
+    int m_targetBounceHeight;
 
-    
-private:
-    // 0 - walking, 1 - falling, 2 - bouncing, 3 - crawling
+    // 0 - walking, 1 - falling, 2 - bouncing, 3 - climbing
     int m_movementState;
 };
 class Player : public Actor {
@@ -99,7 +116,7 @@ public:
 
 class Tool : public Actor {
 public:
-    Tool(int image, int xInit, int yInit, StudentWorld* world);
+    Tool(int image, int xInit, int yInit, StudentWorld* world, int direction = right);
     void doSomething() override;
 };
 
@@ -107,20 +124,26 @@ class Trampoline : public Tool {
 public:
     Trampoline(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+    virtual bool isLauncher() const override {return true;}
+    virtual int getLaunchAmount(int fallHeight) const override;
 };
 class Spring : public Tool {
 public:
     Spring(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+    virtual bool isLauncher() const override {return true;}
+    virtual int getLaunchAmount(int fallHeight) const override;
 };
 class Net : public Tool {
 public:
     Net(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+    bool isClimbable() const override {return true;}
+
 };
 class OneWayDoor : public Tool {
 public:
-    OneWayDoor(int xInit, int yInit, StudentWorld* world);
+    OneWayDoor(int xInit, int yInit, StudentWorld* world, int direction);
     void doSomething() override;
 };
 class Pheromone : public Tool {

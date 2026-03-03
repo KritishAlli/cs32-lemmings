@@ -17,8 +17,10 @@ public:
   virtual int init();
   virtual int move();
   virtual void cleanUp();
-    Level::MazeEntry actorAt(Coord p);
+    
+    bool attemptToolPlace(Coord c, char tool);
     bool isFloorAt(Coord p);
+    bool isClimbableAt(Coord p);
     void addActor(Actor* a);
     int getLemmingsSpawned() {return m_lemmingsSpawned;}
     void incrementLemmingsSpawned() {m_lemmingsSpawned++;}
@@ -28,14 +30,15 @@ public:
     void setLemmingsSaved(int number) {m_lemmingsSaved = number;}
     void saveLemming(Coord c);
     bool killLemming(Coord c);
+    int bounceActor(Coord c, int height, Actor* a);
     int getClosestAttractorDirection(Coord c);
+    bool swapActorDirection(Coord c, int dir);
 
     
 
 private:
     std::vector<Actor*> m_actorList;
     std::string m_toolList;
-    Level m_level;
     int m_levelNumber;
     int m_ticksRemaining;
     int m_lemmingsSpawned;
