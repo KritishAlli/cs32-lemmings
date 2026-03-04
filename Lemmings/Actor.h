@@ -23,6 +23,7 @@ public:
     void setAlive(bool value);
     virtual bool isSaveable() const {return false;}
     virtual bool isKillable() const {return false;}
+    virtual bool canChangeDirection() const {return false;}
     virtual bool isSaved() const {return false;}
     virtual void save() {};
     virtual void kill() {};
@@ -55,6 +56,8 @@ class IceMonster : public Actor {
 public:
     IceMonster(int xInit, int yInit, StudentWorld* world);
     void doSomething() override;
+    bool canChangeDirection() const override {return true;}
+
 private:
     int m_ticksSinceMove;
 
@@ -75,6 +78,7 @@ public:
     void setSaved(bool value) {m_saved = value;}
     bool isSaveable() const override {return true;}
     bool isKillable() const override {return true;}
+    bool canChangeDirection() const override {return true;}
     void save() override;
     void kill() override;
     void doWalking();
@@ -93,7 +97,7 @@ private:
     int m_upwardSteps;
     int m_targetBounceHeight;
 
-    // 0 - walking, 1 - falling, 2 - bouncing, 3 - climbing
+    // -1 - idle, 0 - walking, 1 - falling, 2 - bouncing, 3 - climbing
     int m_movementState;
 };
 class Player : public Actor {

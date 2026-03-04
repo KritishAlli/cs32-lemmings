@@ -10,5 +10,16 @@
             </PersistentString>
          </PersistentStrings>
       </ContextState>
+      <ContextState
+         contextName = "Player::doSomething:Actor.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "getDirection()">
+            </PersistentString>
+            <PersistentString
+               value = "getCoord()">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
    </ContextStates>
 </VariablesViewState>

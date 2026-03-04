@@ -23,7 +23,7 @@ StudentWorld::~StudentWorld(){
 int StudentWorld::init()
 {
     // printNumber(getLevel(), 2)
-    std::string curLevel = "level"+printNumber(getLevel(), 2)+".txt";
+    std::string curLevel = "level01.txt";
     Level lev(assetPath());
     Level::LoadResult result = lev.loadLevel(curLevel);
     m_ticksRemaining = 2000;
@@ -103,9 +103,11 @@ int StudentWorld::move()
         if (cur->isSaveable() && cur->isSaved()) {
             m_actorList.erase(m_actorList.begin() + i);
             delete cur;
+            i--;
         }
         else if (cur->isKillable() && !cur->isAlive()) {
             m_actorList.erase(m_actorList.begin() + i);
+            i--;
             delete cur;
         }
     }
@@ -183,7 +185,7 @@ bool StudentWorld::isFloorAt(Coord p){
 }
 bool StudentWorld::isClimbableAt(Coord p){
     for (Actor* a : m_actorList) {
-            if (a->getCoord() == p && a->isClimbable()) {
+            if (a->isClimbable() && a->getCoord() == p) {
                 return true;
             }
         }
@@ -223,7 +225,7 @@ bool StudentWorld::swapActorDirection(Coord c, int dir) {
     bool flag = false;
     for (int i = 0; i < m_actorList.size(); i++) {
         Actor* cur = m_actorList.at(i);
-        if(cur->getCoord() == c) {
+        if(cur->getCoord() == c && cur->canChangeDirection()) {
             cur->setDirection(dir);
             flag = true;
         }
@@ -237,9 +239,8 @@ int StudentWorld::bounceActor(Coord c, int fallHeight, Actor* a) {
         Actor* cur = m_actorList.at(i);
         if(cur->getCoord() == c && cur->isLauncher()) {
             int amount = cur->getLaunchAmount(fallHeight);
-            
             a->setTargetLaunch(amount);
-            a->setMovementState(2);
+            playSound(SOUND_BOUNCE);
             flag = true;
         }
         

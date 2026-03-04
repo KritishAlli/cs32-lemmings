@@ -15,7 +15,7 @@ void Actor::setSolidity(bool val) {
     m_isSolid = val;
 }
 bool Actor::isLaunchable() const {
-    return m_isSolid;
+    return m_isLaunchable;
 }
 void Actor::setLaunchability(bool val) {
     m_isLaunchable = val;
@@ -36,11 +36,11 @@ IceMonster::IceMonster(int xInit, int yInit, StudentWorld* world)
     : Actor(IID_ICE_MONSTER, xInit, yInit, world), m_ticksSinceMove(0) {}
 
 void IceMonster::doSomething() {
-    
+    m_ticksSinceMove++;
     if (getWorld()->killLemming(getCoord())) {
         return;
     }
-    m_ticksSinceMove++;
+    
     if (m_ticksSinceMove == 10) {
         m_ticksSinceMove = 0;
         int direction = getDirection();
@@ -80,9 +80,10 @@ void LemmingFactory::doSomething() {
 
 
 Lemming::Lemming(int xInit, int yInit, StudentWorld* world)
-    : Actor(IID_LEMMING, xInit, yInit, world, false ,true), m_movementState(0), m_ticksSinceMove(0), m_distanceFalling(0), m_saved(false) , m_upwardSteps(0), m_targetBounceHeight(0){}
+    : Actor(IID_LEMMING, xInit, yInit, world, false ,true), m_movementState(-1), m_ticksSinceMove(-1), m_distanceFalling(0), m_saved(false) , m_upwardSteps(0), m_targetBounceHeight(0){}
 void Lemming::doSomething() {
     m_ticksSinceMove ++;
+
     if (!isAlive()) {
         return;
     }
@@ -94,14 +95,21 @@ void Lemming::doSomething() {
     if (closestPheromoneDirection != none) {
         setDirection(closestPheromoneDirection);
     }
-    int didActorBounce = getWorld()->bounceActor(getCoord(), m_distanceFalling, this);
-    
-    if (didActorBounce == 1){
-        m_movementState = 2;
+    if (m_movementState != 2) {
+        int didActorBounce = getWorld()->bounceActor(getCoord(), m_distanceFalling, this);
+        if (didActorBounce == 1){
+            m_upwardSteps = 0;
+            m_movementState = 2;
+        }
     }
     
     
-    if (m_movementState == 0) {
+    
+    if (m_movementState == -1){
+        m_movementState = 0;
+        doWalking();
+    }
+    else if (m_movementState == 0) {
         doWalking();
     }
     else if (m_movementState == 1){
@@ -113,7 +121,6 @@ void Lemming::doSomething() {
     else if (m_movementState == 3) {
         doClimbing();
     }
-    
     
     return;
     
@@ -158,7 +165,6 @@ void Lemming::doFalling(){
     }
     else {
         if (m_distanceFalling > 5) {
-            getWorld()->playSound(SOUND_LEMMING_DIE);
             getWorld()->killLemming(getCoord());
             return;
         }
@@ -247,13 +253,13 @@ void Player::doSomething() {
             }
             case KEY_PRESS_UP: {
                 Coord oneForward = getTargetCoord(up);
-                if (oneForward.y >= 1)
+                if (oneForward.y <= VIEW_HEIGHT-2)
                     moveTo(up);
                 break;
             }
             case KEY_PRESS_DOWN: {
                 Coord oneForward = getTargetCoord(down);
-                if (oneForward.y <= VIEW_HEIGHT-2)
+                if (oneForward.y >= 1)
                     moveTo(down);
                 break;
             }
